@@ -23,6 +23,7 @@ class Menu(Screen):
         layout.add_widget(btn_settings)
 
         btn_exit = Button(text = 'exit', size_hint = (1, 0.15), font_size = '20sp', background_color = (0.60, 0.35, 0.85, 1))
+        btn_exit.bind(on_press=lambda x: App.get_running_app().stop())
         layout.add_widget(btn_exit)
 
         self.add_widget(layout)
