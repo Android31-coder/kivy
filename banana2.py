@@ -4,6 +4,8 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.image import Image
+from kivy.uix.floatlayout import FloatLayout
 
 Window.size = (1200, 700)
 Window.clearcolor = (0.25, 0.14, 0.26, 1)
@@ -62,19 +64,20 @@ class Game(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
         
-        layout = BoxLayout(
-            orientation = 'vertical',
-            padding = '20dp',
-            spacing = '20dp'
-        )
+        layout = FloatLayout()
         self.score = 0
 
-        self.lbl_title = Label(text = "Score: 0", font_size = '20sp', size_hint = (1, 0.2))
+        self.lbl_title = Label(text = "Score: 0", font_size = '20sp', size_hint = (1, 0.2), pos_hint = {"top": 1})
         layout.add_widget(self.lbl_title)
 
-        btn_click = Button(text = 'Click', size_hint = (1, 0.5), font_size = '40sp')
-        btn_click.bind(on_press = self.increment_score)
-        layout.add_widget(btn_click)
+        self.fish = Fish(
+            size_hint = (None, None),
+            size = (200, 200), 
+            pos_hint = {"center_x":0.5, "center_y": 0.5}
+        )
+
+        self.fish.game_screen = self
+        layout.add_widget(self.fish)
         
         back_to_menu = Button(text = "Back", font_size = '20sp', size_hint = (1, 0.15), background_color = (0.80, 0.35, 0.85, 1))
         back_to_menu.bind(on_press = self.to_menu)
@@ -88,7 +91,57 @@ class Game(Screen):
         self.score += 1
         self.lbl_title.text = f"Score: {self.score}" 
 
+class Fish(Image):
+    fish_current = None
+    fish_index = 0
+    hp_current = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.game_screen = None
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos) or not self.opacity:
+            return
+        self.hp_current -= 1
+        self.game_screen.score += 1
+        self.game_screen.lbl_title.text = f"Score : {self.game_screen.score}"
+        if self.hp_current <= 0:
+            self.dead_fish()
+
+        return super().on_touch_down(touch)
+
+    def dead_fish(self):
+        self.opacity = 0
+        self.fish_index += 1
+        app = App.get_running_app()
+        if self.fish_index >= len(app.LEVELS[app.LEVEL]):
+            self.game_screen.level_complete()
+        else:
+            self.new_fish()
+
+    def new_fish(self):
+        app = App.get_running_app()
+        self.fish_current = app.LEVELS[app.LEVEL][self.fish_index]
+        self.source = app.FISHES[self.fish_current]['source']
+        self.hp_current = app.FISHES[self.fish_current]['hp']
+        self.opacity
+
 class MyApp(App):
+    LEVEL = 0
+    FISHES = {
+        "fish1":{
+            "source": "шдях до картинки",
+            "hp": 10
+        },
+        "fish2":{
+            "source": "шдях до картинки",
+            "hp": 20
+        },
+    }
+    LEVELS = [
+        ["fish1", "fish2", "fish1"]
+    ]
     def build(self):
         sm = ScreenManager()
         sm.add_widget(Menu(name = 'menu'))
