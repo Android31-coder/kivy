@@ -72,7 +72,7 @@ class Game(Screen):
 
         self.fish = Fish(
             size_hint = (None, None),
-            size = (200, 200), 
+            size = (500, 500), 
             pos_hint = {"center_x":0.5, "center_y": 0.5}
         )
 
@@ -90,6 +90,19 @@ class Game(Screen):
     def increment_score(self, *args):
         self.score += 1
         self.lbl_title.text = f"Score: {self.score}" 
+
+    def on_enter(self, *args):
+        self.star_game()
+        return super().on_enter(*args)
+    
+    def star_game(self):
+        self.score = 0
+        self.lbl_title.text = f"Score: {self.score}"
+        self.fish.fish_index = 0
+        self.fish.new_fish()
+
+    def level_complete(self):
+        self.lbl_title.text = "Level Complete!"
 
 class Fish(Image):
     fish_current = None
@@ -125,17 +138,17 @@ class Fish(Image):
         self.fish_current = app.LEVELS[app.LEVEL][self.fish_index]
         self.source = app.FISHES[self.fish_current]['source']
         self.hp_current = app.FISHES[self.fish_current]['hp']
-        self.opacity
+        self.opacity = 1
 
 class MyApp(App):
     LEVEL = 0
     FISHES = {
         "fish1":{
-            "source": "шдях до картинки",
+            "source": "assets\meme.jpg",
             "hp": 10
         },
         "fish2":{
-            "source": "шдях до картинки",
+            "source": "assets\meme1.jpg",
             "hp": 20
         },
     }
