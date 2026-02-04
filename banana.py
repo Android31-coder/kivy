@@ -6,6 +6,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
+from kivy.core.audio import SoundLoader
+import random
+from kivy.animation import Animation
 
 Window.size = (1200, 700)
 Window.clearcolor = (0.25, 0.14, 0.26, 1)
@@ -64,11 +67,17 @@ class Game(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
         
-        layout = FloatLayout()
+        self.layout = FloatLayout()
         self.score = 0
 
+        self.phrases = [
+            "Не бий мене",
+            "Пощади",
+            "Не треба, будь ласка"
+        ]
+
         self.lbl_title = Label(text = "Score: 0", font_size = '20sp', size_hint = (1, 0.2), pos_hint = {"top": 1})
-        layout.add_widget(self.lbl_title)
+        self.layout.add_widget(self.lbl_title)
 
         self.fish = Fish(
             size_hint=(None, None),
@@ -80,12 +89,13 @@ class Game(Screen):
 
 
         self.fish.game_screen = self
-        layout.add_widget(self.fish)
+        # self.fish.app = App.get_running_app()
+        self.layout.add_widget(self.fish)
         
         back_to_menu = Button(text = "Back", font_size = '20sp', size_hint = (1, 0.15), background_color = (0.80, 0.35, 0.85, 1))
         back_to_menu.bind(on_press = self.to_menu)
-        layout.add_widget(back_to_menu)
-        self.add_widget(layout)
+        self.layout.add_widget(back_to_menu)
+        self.add_widget(self.layout)
 
     def to_menu(self, *args):
         self.manager.current = 'menu'
@@ -125,6 +135,37 @@ class Fish(Image):
         if self.hp_current <= 0:
             self.dead_fish()
 
+        app = App.get_running_app()
+        if app and app.click_sound:
+            app.click_sound.play()
+
+        phrase = random.choice(self.game_screen.phrases)
+        text_label = Label(
+            text = phrase,
+            font_size = "28sp",
+            size_hint = (None, None),
+            color = (1,0,0,1),
+            size =(320, 80)
+        )
+
+        text_label.center_x = self.center_x
+        text_label.y = self.top + 20
+
+        self.game_screen.layout.add_widget(text_label)
+
+        def remove_label_after_anim(animation_abj, widget):
+            self.game_screen.layout.remove_widget(widget)
+
+        anim = Animation(
+            y = text_label.y + 20,
+            opacity = 0, 
+            duration = 1.6, 
+            t = "out_quad"
+        )
+
+        anim.bind(on_complete = remove_label_after_anim)
+        anim.start(text_label)
+
         return super().on_touch_down(touch)
 
     def dead_fish(self):
@@ -162,12 +203,19 @@ class MyApp(App):
     LEVELS = [
         ["fish1", "fish2", "fish3"]
     ]
+    CLICK_SOUND = "assets\click_sound.mp3"
     def build(self):
         sm = ScreenManager()
         sm.add_widget(Menu(name = 'menu'))
         sm.add_widget(Settings(name = 'Settings'))
         sm.add_widget(Game(name = 'Game'))
         return sm
+    def on_start(self):
+        self.click_sound = SoundLoader.load(MyApp.CLICK_SOUND)
+        if self.click_sound is None:
+            print("Не вдалося завантажити звук")
+        else:
+            print("Звук завантажено успішно")
 
 my_app = MyApp()
 my_app.run()
